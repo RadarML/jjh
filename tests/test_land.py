@@ -74,3 +74,15 @@ def test_graph_ends_in_one_main_after_partial_land(repo):
         graph = repo.gh.prs[n].body.split("<pre>\n", 1)[1].split("\n</pre>", 1)[0]
         assert [line for line in graph.splitlines() if "◆" in line] == ["◆  main"]
         assert graph.endswith("◆  main")
+
+
+def test_land_warns_only_about_adopted_branches(example, capsys):
+    example.git_remote("push", "-q", "origin", "main:refs/heads/dev/theirs")
+    example.jj("git", "fetch")
+    example.gh.add(200, "dev/their-part", "dev/theirs")
+    example.gh.merge(200)
+    example.gh.add(201, "dev/oops", "dev/parser")
+    example.gh.merge(201)
+    land(example.ctx())
+    err = capsys.readouterr().err
+    assert "#201" in err and "#200" not in err

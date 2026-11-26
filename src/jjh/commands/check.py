@@ -114,7 +114,8 @@ def find_problems(snap: Snapshot) -> list[Finding]:
                 f"`gh pr ready --undo {pr.number}`", pr=pr.number))
 
     for pr in snap.prs:
-        if pr.state == "MERGED" and pr.base != default and pr.base in snap.bookmarks:
+        base = snap.bookmarks.get(pr.base)
+        if pr.state == "MERGED" and pr.base != default and base is not None and base.adopted:
             out.append(Finding(
                 Kind.MERGED_ELSEWHERE, f"#{pr.number} {pr.head}",
                 f"was merged into {pr.base}, not {default}; see "

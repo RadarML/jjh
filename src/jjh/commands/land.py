@@ -45,7 +45,7 @@ def land(ctx: Context) -> LandResult:
         if pr.state != "MERGED":
             continue
         if pr.base != default:
-            if pr.base in before:
+            if pr.base in before and before[pr.base].adopted:
                 warn(
                     f"#{pr.number} {pr.head} was merged into {pr.base}, not {default}; "
                     "see 'Recovering from an accidental merge' in the docs")
