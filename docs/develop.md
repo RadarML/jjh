@@ -29,20 +29,16 @@ Or install the development copy as an editable tool:
 uv tool install --editable .
 ```
 
-## Adding Commands
-
-Each subcommand is a plain function whose arguments are parsed by [tyro](https://brentyi.github.io/tyro/); register it in `COMMANDS` in `src/jjh/cli.py`. The first paragraph of the function's docstring is shown in `jjh --help`, and the arguments' docstrings are shown in `jjh <command> --help`. Add a corresponding section to `docs/cli.md`.
-
 ## Tests
+
+Make sure [jj](https://jj-vcs.github.io/jj/latest/install-and-setup/) is installed and on your `$PATH`.
 
 Run tests:
 ```sh
 uv run --extra dev pytest -ra --cov --cov-report=html --cov-report=term -- tests
 ```
 
-!!! tip
-
-    HTML-format code coverage is saved to `./htmlcov`; view these with `cd htmlcov; python -m http.server 8001`.
+HTML-format code coverage is saved to `./htmlcov`; view these with `cd htmlcov; python -m http.server 8001`.
 
 !!! info
 

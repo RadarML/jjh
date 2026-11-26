@@ -5,7 +5,7 @@
 [![CI](https://github.com/RadarML/jjh/actions/workflows/ci.yml/badge.svg)](https://github.com/RadarML/jjh/actions/workflows/ci.yml)
 ![GitHub issues](https://img.shields.io/github/issues/RadarML/jjh)
 
-`jjh` is a command line tool for using a [jj](https://github.com/jj-vcs/jj) workflow on github.
+`jjh` is a command line tool for using a [jj](https://github.com/jj-vcs/jj) workflow on github; see the [documentation](https://radarml.github.io/jjh) for the full workflow.
 
 ## Install
 
@@ -22,7 +22,7 @@ uvx --from git+ssh://git@github.com/RadarML/jjh.git jjh --help
 ```
 
 > [!NOTE]
-> `jjh` requires Python 3.14; `uv` will download it automatically if needed.
+> `jjh` requires Python 3.14 (`uv` will download it automatically if needed), [jj](https://jj-vcs.github.io/jj/latest/install-and-setup/), and an authenticated [`gh`](https://cli.github.com/).
 
 ## Development
 
