@@ -6,8 +6,8 @@ from jjh.github import GhCli
 from jjh.run import Runner
 
 NODE = {
-    "number": 94, "headRefName": "dev/demo-config", "baseRefName": "jj-diffbase/dev/demo-config",
-    "title": "Select demo config", "body": None, "isDraft": True, "state": "OPEN",
+    "number": 94, "headRefName": "dev/examples", "baseRefName": "jj-diffbase/dev/examples",
+    "title": "Add example configs", "body": None, "isDraft": True, "state": "OPEN",
     "headRefOid": "abc", "author": {"login": "me"}}
 
 
@@ -20,7 +20,7 @@ class FakeRunner(Runner):
         self.calls.append((args, input))
         if args[1:3] == ["repo", "view"]:
             return json.dumps({
-                "nameWithOwner": "RadarML/xwr", "url": "https://github.com/RadarML/xwr",
+                "nameWithOwner": "example/repo", "url": "https://github.com/example/repo",
                 "defaultBranchRef": {"name": "main"}})
         if args[1:3] == ["api", "user"]:
             return "me\n"
@@ -31,13 +31,13 @@ class FakeRunner(Runner):
                          "nodes": [{**NODE, "number": 95 if page2 else 94}]},
                 "merged": {"nodes": [{**NODE, "number": 80, "state": "MERGED"}]}}}})
         if args[1:3] == ["pr", "create"]:
-            return "https://github.com/RadarML/xwr/pull/97\n"
+            return "https://github.com/example/repo/pull/97\n"
         return ""
 
 
 def test_repo_and_prs():
     gh = GhCli(run=FakeRunner())
-    assert gh.repo().pr_url(3) == "https://github.com/RadarML/xwr/pull/3"
+    assert gh.repo().pr_url(3) == "https://github.com/example/repo/pull/3"
     assert gh.repo().viewer == "me"
     prs = gh.pull_requests()
     assert [(p.number, p.state) for p in prs] == [(80, "MERGED"), (94, "OPEN"), (95, "OPEN")]

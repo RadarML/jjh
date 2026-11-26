@@ -15,22 +15,22 @@ from jjh.run import Runner
 
 requires_jj = pytest.mark.skipif(shutil.which("jj") is None, reason="jj is not installed")
 
-URL = "https://github.com/RadarML/xwr"
+URL = "https://github.com/example/repo"
 
 
 def link(n: int, head: str) -> str:
     return f'<a href="{URL}/pull/{n}">#{n} {head}</a>'
 
 
-GOLDEN_94 = f"""\
-@  {link(94, "dev/demo-config")}: Select demo config and rsp from --device
+EXAMPLE_GRAPH = f"""\
+@  {link(94, "dev/examples")}: Add example configs
 ├─╮
-│ ○  {link(90, "fix/real-only-range")}: Fix XWRConfig.max_range for real-only radars
-○ │  {link(93, "dev/awrl6888-docs")}: Document AWRL6888EVM setup
-○ │  {link(92, "dev/awrl6888-rsp")}: Add AWRL6888EVM signal processing and demo config
-○ │  {link(91, "dev/awrl6888")}: Add AWRL6888 radar interface
+│ ○  {link(90, "fix/empty-input")}: Handle empty input files
+○ │  {link(93, "docs/parser")}: Document the parser
+○ │  {link(92, "dev/parser-cli")}: Add a command line for the parser
+○ │  {link(91, "dev/parser")}: Add a config parser
 ├─╯
-○  {link(96, "ci/all-pr-bases")}: Run CI on pull requests against any base
+○  {link(96, "ci/test-all-prs")}: Run CI on every pull request
 ◆  main"""
 
 
@@ -183,32 +183,32 @@ def squash_merge(repo, number: int, retarget: dict[int, str] | None = None) -> N
         repo.gh.edit(n, base=base)
 
 
-XWR_TITLES = {
-    96: ("ci/all-pr-bases", "Run CI on pull requests against any base"),
-    91: ("dev/awrl6888", "Add AWRL6888 radar interface"),
-    92: ("dev/awrl6888-rsp", "Add AWRL6888EVM signal processing and demo config"),
-    93: ("dev/awrl6888-docs", "Document AWRL6888EVM setup"),
-    90: ("fix/real-only-range", "Fix XWRConfig.max_range for real-only radars"),
-    94: ("dev/demo-config", "Select demo config and rsp from --device"),
+EXAMPLE_PRS = {
+    96: ("ci/test-all-prs", "Run CI on every pull request"),
+    91: ("dev/parser", "Add a config parser"),
+    92: ("dev/parser-cli", "Add a command line for the parser"),
+    93: ("docs/parser", "Document the parser"),
+    90: ("fix/empty-input", "Handle empty input files"),
+    94: ("dev/examples", "Add example configs"),
 }
 
 
 @pytest.fixture
-def xwr(repo: Repo) -> Repo:
-    """The AWRL6888 PRs from the guide: #94 is a merge of #93's stack and #90."""
-    t = XWR_TITLES
+def example(repo: Repo) -> Repo:
+    """The PR graph from the docs: #94 merges #93's stack and #90 through a diffbase."""
+    t = EXAMPLE_PRS
     repo.commit("main", message=t[96][1], bookmark=t[96][0])
     repo.commit(t[96][0], message=t[91][1], bookmark=t[91][0])
     repo.commit(t[91][0], message=t[92][1], bookmark=t[92][0])
     repo.commit(t[92][0], message=t[93][1], bookmark=t[93][0])
-    repo.commit(t[96][0], message=t[90][1] + "\n\nOnly real-only radars.", bookmark=t[90][0])
-    repo.jj("new", t[93][0], t[90][0], "-m", "JJ_MERGE_DIFFBASE: dev/demo-config")
-    repo.jj("bookmark", "create", "jj-diffbase/dev/demo-config", "-r", "@")
-    repo.commit("jj-diffbase/dev/demo-config", message=t[94][1], bookmark=t[94][0])
+    repo.commit(t[96][0], message=t[90][1] + "\n\nEmpty files used to crash.", bookmark=t[90][0])
+    repo.jj("new", t[93][0], t[90][0], "-m", "JJ_MERGE_DIFFBASE: dev/examples")
+    repo.jj("bookmark", "create", "jj-diffbase/dev/examples", "-r", "@")
+    repo.commit("jj-diffbase/dev/examples", message=t[94][1], bookmark=t[94][0])
     repo.jj("new")
     repo.jj("git", "push", "--all")
     bases = {96: "main", 91: t[96][0], 92: t[91][0], 93: t[92][0], 90: t[96][0],
-             94: "jj-diffbase/dev/demo-config"}
+             94: "jj-diffbase/dev/examples"}
     for n, (head, title) in t.items():
         repo.gh.add(n, head, bases[n], title=title, body="old body")
     repo.gh.next_number = 97

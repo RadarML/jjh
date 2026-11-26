@@ -12,42 +12,42 @@ from jjh.commands.sync import sync
 pytestmark = requires_jj
 
 
-def test_land_bottom_up(xwr):
-    ctx = xwr.ctx()
+def test_land_bottom_up(example):
+    ctx = example.ctx()
     sync(ctx, fetch=False)
 
     # GitHub retargets #91 itself; land must retarget #90.
-    squash_merge(xwr, 96, retarget={91: "main"})
+    squash_merge(example, 96, retarget={91: "main"})
     result = land(ctx)
     assert result.landed == [96]
-    assert parents(xwr, "dev/awrl6888") == ["main"]
-    assert parents(xwr, "fix/real-only-range") == ["main"]
-    assert xwr.gh.prs[90].base == "main"
+    assert parents(example, "dev/parser") == ["main"]
+    assert parents(example, "fix/empty-input") == ["main"]
+    assert example.gh.prs[90].base == "main"
     assert {90, 91} <= set(result.readied)
-    assert not xwr.gh.prs[90].is_draft and not xwr.gh.prs[91].is_draft
-    assert "#96" not in xwr.gh.prs[94].body
+    assert not example.gh.prs[90].is_draft and not example.gh.prs[91].is_draft
+    assert "#96" not in example.gh.prs[94].body
     assert find_problems(ctx.snapshot()) == []
 
     # Landing #90 leaves the diffbase with one unlanded parent: remove it.
-    squash_merge(xwr, 90)
+    squash_merge(example, 90)
     result = land(ctx)
     assert result.landed == [90]
-    assert result.diffbases == ["dev/demo-config"]
-    assert parents(xwr, "dev/demo-config") == ["dev/awrl6888-docs"]
+    assert result.diffbases == ["dev/examples"]
+    assert parents(example, "dev/examples") == ["docs/parser"]
     # #94 still has #90's change, which it got through the diffbase.
-    assert "fix_real-only-range" in xwr.jj("file", "list", "-r", "dev/demo-config")
-    assert xwr.gh.prs[94].base == "dev/awrl6888-docs"
-    assert "jj-diffbase/dev/demo-config" not in remote_branches(xwr)
+    assert "fix_empty-input" in example.jj("file", "list", "-r", "dev/examples")
+    assert example.gh.prs[94].base == "docs/parser"
+    assert "jj-diffbase/dev/examples" not in remote_branches(example)
     assert find_problems(ctx.snapshot()) == []
 
 
-def test_land_twice(xwr):
+def test_land_twice(example):
     """A landed commit is hidden after the first land; the second must not touch it."""
-    ctx = xwr.ctx()
+    ctx = example.ctx()
     sync(ctx, fetch=False)
     # GitHub reports the merged PR's head commit, which jj keeps as a hidden commit.
-    xwr.gh.prs[96] = replace(xwr.gh.prs[96], head_oid=xwr.target("ci/all-pr-bases"))
-    squash_merge(xwr, 96, retarget={91: "main", 90: "main"})
+    example.gh.prs[96] = replace(example.gh.prs[96], head_oid=example.target("ci/test-all-prs"))
+    squash_merge(example, 96, retarget={91: "main", 90: "main"})
     assert land(ctx).landed == [96]
     assert land(ctx).landed == []
     assert find_problems(ctx.snapshot()) == []

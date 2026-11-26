@@ -73,7 +73,7 @@ def cli_pr(
 
     Args:
         bookmark: the bookmark (PR head branch) to create, such as
-            `fix/real-only-range`. It must start with `dev/`, `fix/`, `docs/`
+            `fix/empty-input`. It must start with `dev/`, `fix/`, `docs/`
             or `ci/`.
         rev: the commit to open a PR for.
         reviewer: GitHub users to request reviews from (repeatable).
