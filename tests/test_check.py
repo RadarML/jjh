@@ -45,3 +45,16 @@ def test_check_merge_without_diffbase(repo):
         repo.gh.add(n, head, "main" if n < 3 else "dev/a")
     [p] = [p for p in find_problems(repo.ctx().snapshot()) if p.kind == Kind.NO_BASE]
     assert "jjh diffbase add dev/m" in p.message
+
+
+def test_merged_elsewhere_only_into_adopted_branches(example):
+    # A teammate's branch, never adopted here, with a sub-PR merged into it on purpose.
+    example.git_remote("push", "-q", "origin", "main:refs/heads/dev/theirs")
+    example.jj("git", "fetch")
+    example.gh.add(200, "dev/their-part", "dev/theirs")
+    example.gh.merge(200)
+    # A PR merged into one of the branches in our own graph by mistake.
+    example.gh.add(201, "dev/oops", "dev/parser")
+    example.gh.merge(201)
+    problems = find_problems(example.ctx().snapshot())
+    assert [p.pr for p in problems if p.kind == Kind.MERGED_ELSEWHERE] == [201]

@@ -90,6 +90,11 @@ class Bookmark:
         return self.remote[0] if len(self.remote) == 1 else None
 
     @property
+    def adopted(self) -> bool:
+        """Local or tracked: part of a graph you work on here."""
+        return bool(self.local) or self.tracked
+
+    @property
     def conflicted(self) -> bool:
         """`name??`: several targets, locally or on the remote."""
         return len(self.local) > 1 or len(self.remote) > 1
