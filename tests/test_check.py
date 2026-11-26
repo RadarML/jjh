@@ -8,32 +8,32 @@ from jjh.commands.sync import sync
 pytestmark = requires_jj
 
 
-def test_check_clean(xwr):
-    sync(xwr.ctx(), fetch=False)
-    assert find_problems(xwr.ctx().snapshot()) == []
+def test_check_clean(example):
+    sync(example.ctx(), fetch=False)
+    assert find_problems(example.ctx().snapshot()) == []
 
 
-def test_check_base_mismatch_fix(xwr):
-    xwr.gh.edit(92, base="main")
-    problems = check(xwr.ctx())
+def test_check_base_mismatch_fix(example):
+    example.gh.edit(92, base="main")
+    problems = check(example.ctx())
     assert [(p.kind, p.pr, p.base) for p in problems if p.kind == Kind.BASE] == [
-        (Kind.BASE, 92, "dev/awrl6888")]
-    assert check(xwr.ctx(), fix=True) == [p for p in problems if p.kind not in {Kind.BASE}]
-    assert xwr.gh.prs[92].base == "dev/awrl6888"
+        (Kind.BASE, 92, "dev/parser")]
+    assert check(example.ctx(), fix=True) == [p for p in problems if p.kind not in {Kind.BASE}]
+    assert example.gh.prs[92].base == "dev/parser"
 
 
-def test_check_unpushed_and_stale(xwr):
-    xwr.jj("describe", "-r", "dev/awrl6888", "-m", "Reworded")
-    kinds = {(p.kind, p.subject) for p in find_problems(xwr.ctx().snapshot())}
-    assert (Kind.UNPUSHED, "dev/awrl6888*") in kinds
-    assert (Kind.UNPUSHED, "dev/demo-config*") in kinds
+def test_check_unpushed_and_stale(example):
+    example.jj("describe", "-r", "dev/parser", "-m", "Reworded")
+    kinds = {(p.kind, p.subject) for p in find_problems(example.ctx().snapshot())}
+    assert (Kind.UNPUSHED, "dev/parser*") in kinds
+    assert (Kind.UNPUSHED, "dev/examples*") in kinds
 
-    xwr.jj("git", "push", "-b", "dev/awrl6888")
-    kinds = {(p.kind, p.pr) for p in find_problems(xwr.ctx().snapshot())}
+    example.jj("git", "push", "-b", "dev/parser")
+    kinds = {(p.kind, p.pr) for p in find_problems(example.ctx().snapshot())}
     assert (Kind.STALE, 92) in kinds
 
-    check(xwr.ctx(), fix=True)
-    assert find_problems(xwr.ctx().snapshot()) == []
+    check(example.ctx(), fix=True)
+    assert find_problems(example.ctx().snapshot()) == []
 
 
 def test_check_merge_without_diffbase(repo):

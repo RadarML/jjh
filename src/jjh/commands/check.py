@@ -35,7 +35,7 @@ class Finding:
 
     Attributes:
         kind: what kind of problem this is.
-        subject: the PR (`#94 dev/demo-config`) or bookmark it is about.
+        subject: the PR (`#94 dev/examples`) or bookmark it is about.
         message: what is wrong, and how to fix it by hand.
         pr: PR number, if the problem is about a PR.
         base: the base the PR should have, for `Kind.BASE`.

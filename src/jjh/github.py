@@ -13,7 +13,7 @@ class RepoInfo:
     """A GitHub repository.
 
     Attributes:
-        url: repository URL, e.g. `https://github.com/RadarML/jjh`.
+        url: repository URL, e.g. `https://github.com/example/repo`.
         default_branch: the branch PRs land in, usually `main`.
         viewer: login of the authenticated user.
     """
