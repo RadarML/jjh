@@ -3,10 +3,10 @@
 from dataclasses import dataclass, field
 
 from jjh.context import Context
-from jjh.jj import DIFFBASE_MARKER, bookmark_rev
+from jjh.jj import bookmark_rev
 from jjh.run import info, warn
 
-from .diffbase import diffbase_rm
+from .diffbase import diffbase_owner, diffbase_rm
 from .sync import sync
 
 
@@ -82,7 +82,7 @@ def land(ctx: Context) -> LandResult:
     snap = ctx.snapshot(prs=prs)
     for d in snap.commits.values():
         if d.is_diffbase and sum(p in snap.commits for p in d.parents) <= 1:
-            bookmark = d.description.removeprefix(DIFFBASE_MARKER).strip().split("\n")[0]
+            bookmark = diffbase_owner(d)
             if ctx.jj.log(f"present({bookmark_rev(bookmark)})"):
                 diffbase_rm(ctx, bookmark, push=False)
                 result.diffbases.append(bookmark)

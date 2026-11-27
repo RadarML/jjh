@@ -3,9 +3,14 @@
 from dataclasses import replace
 
 from jjh.context import Context
-from jjh.jj import DIFFBASE_MARKER, bookmark_rev
+from jjh.jj import DIFFBASE_MARKER, Commit, bookmark_rev
 from jjh.run import JJHError, info
 from jjh.stack import diffbase_name
+
+
+def diffbase_owner(diffbase: Commit) -> str:
+    """The bookmark of the PR a diffbase commit was made for, from its description."""
+    return diffbase.description.removeprefix(DIFFBASE_MARKER).strip().split("\n")[0]
 
 
 def diffbase_add(ctx: Context, bookmark: str, *, push: bool = True) -> str:
