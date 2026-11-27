@@ -1,5 +1,6 @@
 # `jjh`: Tooling for using a jj workflow on github
 
+[![Version](https://img.shields.io/github/v/release/RadarML/jjh)](https://github.com/RadarML/jjh/releases)
 ![Python Version](https://img.shields.io/badge/python-3.14-blue)
 ![License - MIT](https://img.shields.io/badge/license-MIT-green)
 [![CI](https://github.com/RadarML/jjh/actions/workflows/ci.yml/badge.svg)](https://github.com/RadarML/jjh/actions/workflows/ci.yml)
