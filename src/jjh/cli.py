@@ -99,7 +99,9 @@ def cli_check(
     - bookmarks that differ from GitHub (`name*`), are conflicted (`name??`),
       or were deleted locally but not on GitHub;
     - PRs whose base doesn't match the bookmark below them in `jj log`;
-    - merge commits without a diffbase, and unbookmarked commits inside a PR;
+    - merge commits without a diffbase, diffbases left with one parent, and
+      diffbases no longer below their PR's commit;
+    - unbookmarked commits inside a PR;
     - upper PRs whose branch on GitHub is not on top of their base;
     - PRs merged into a branch other than the default branch;
     - drafts based on the default branch, and non-drafts based on another PR.
@@ -108,8 +110,9 @@ def cli_check(
     can run it at any time. Exits with status 1 if problems remain.
 
     Args:
-        fix: fetch, push with `--tracked`, retarget mismatched PRs, push
-            deletions with `--deleted`, then run `sync`.
+        fix: fetch, add, remove or abandon diffbases as needed, push with
+            `--tracked`, retarget mismatched PRs, push deletions with
+            `--deleted`, then run `sync`.
         dry_run: print the jj and gh commands that would change anything,
             instead of running them.
         remote: git remote that holds the PR branches.
@@ -186,8 +189,8 @@ def cli_diffbase(
     only its own change. `rm` removes it once all but one of its parents have
     landed: it rebases the PR onto the remaining parent, abandons the
     diffbase, retargets the PR, and pushes the deletion last (GitHub closes a
-    PR whose base branch is deleted). `jjh pr` and `jjh land` run these for
-    you.
+    PR whose base branch is deleted). `jjh pr`, `jjh land` and
+    `jjh check --fix` run these for you.
 
     Args:
         action: `add` or `rm`.
