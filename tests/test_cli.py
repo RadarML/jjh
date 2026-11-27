@@ -3,6 +3,7 @@
 import subprocess
 import sys
 from importlib.metadata import version
+from types import SimpleNamespace
 
 import pytest
 
@@ -33,3 +34,18 @@ def test_module_entrypoint():
         [sys.executable, "-m", "jjh", "version"],
         capture_output=True, text=True, check=True)
     assert out.stdout.strip() == version("jjh")
+
+
+@pytest.mark.parametrize(("args", "pull"), [([], True), (["--no-pull"], False)])
+def test_sync_pulls_by_default(monkeypatch, args, pull):
+    seen = {}
+
+    def fake_sync(ctx, *, pull, fetch, take):
+        seen["pull"] = pull
+        return SimpleNamespace(conflicts=[])
+
+    monkeypatch.setattr(cli, "sync", fake_sync)
+    monkeypatch.setattr(cli.Context, "create", staticmethod(lambda **_: None))
+    monkeypatch.setattr(sys, "argv", ["jjh", "sync", *args])
+    cli.main()
+    assert seen["pull"] is pull

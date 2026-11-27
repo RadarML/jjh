@@ -20,7 +20,7 @@ class SyncResult:
     Attributes:
         pushed: PRs whose title and body were updated from their commit.
         pulled: PRs whose commit description was updated from the PR.
-        edited: PRs edited on GitHub that were left alone (no `--pull`).
+        edited: PRs edited on GitHub that were left alone (`pull=False`).
         conflicts: PRs changed on both sides; nothing was changed on them.
         updated: PRs that `gh pr edit` was called on.
     """
@@ -142,7 +142,7 @@ def _report(result: SyncResult) -> None:
     if result.edited:
         info(
             f"Edited on GitHub, not pulled: {nums(result.edited)}. "
-            "Run `jjh sync --pull` to copy the edits into the commits.")
+            "Run `jjh sync` to copy the edits into the commits.")
     if result.conflicts:
         warn(
             f"Changed both locally and on GitHub since the last sync: {nums(result.conflicts)}. "

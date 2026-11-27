@@ -26,7 +26,7 @@ def cli_version() -> None:
 
 
 def cli_sync(
-    pull: bool = False, take: Literal["commit", "pr"] | None = None, fetch: bool = True,
+    pull: bool = True, take: Literal["commit", "pr"] | None = None, fetch: bool = True,
     dry_run: bool = False, remote: str = "origin",
 ) -> int:
     """Sync PR titles and descriptions with their commits, and regenerate graph sections.
@@ -36,7 +36,7 @@ def cli_sync(
     and the PR text are compared with the hash stored at the last sync:
 
     - only the commit changed: the PR's title and body are updated;
-    - only the PR changed: it is listed, and pulled into the commit with `--pull`;
+    - only the PR changed: the commit description is updated (unless `--no-pull`);
     - both changed: nothing is changed on that PR, and it is reported (unless
       `--take` picks a side);
     - neither changed: only the graph section is regenerated.
@@ -49,7 +49,7 @@ def cli_sync(
     Args:
         pull: copy PR text edited on GitHub into the commit descriptions. This
             rewrites the commits, so the next push force-pushes them and every
-            PR above them.
+            PR above them. With `--no-pull`, edited PRs are only listed.
         take: for PRs changed both locally and on GitHub since the last sync,
             keep the commit's text (`commit`) or the PR's (`pr`) instead of
             reporting a conflict.
