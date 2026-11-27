@@ -4,9 +4,11 @@ from dataclasses import dataclass
 from enum import Enum
 
 from jjh.context import Context
+from jjh.jj import DIFFBASE_PREFIX
 from jjh.run import info
 from jjh.stack import Snapshot
 
+from .diffbase import diffbase_add, diffbase_owner, diffbase_rm
 from .sync import sync
 
 
@@ -18,6 +20,9 @@ class Kind(Enum):
     DELETED = "deleted"
     BASE = "base"
     NO_BASE = "no-base"
+    NO_DIFFBASE = "no-diffbase"
+    SPENT_DIFFBASE = "spent-diffbase"
+    ORPHAN_DIFFBASE = "orphan-diffbase"
     SKIPPED = "skipped"
     STALE = "stale"
     MERGED_ELSEWHERE = "merged-elsewhere"
@@ -25,7 +30,10 @@ class Kind(Enum):
     READY_ON_BRANCH = "ready-on-branch"
 
 
-FIXABLE = {Kind.UNPUSHED, Kind.DELETED, Kind.BASE}
+DIFFBASE_KINDS = {Kind.NO_DIFFBASE, Kind.SPENT_DIFFBASE, Kind.ORPHAN_DIFFBASE}
+"""Diffbase problems, which `check --fix` fixes before anything else."""
+
+FIXABLE = {Kind.UNPUSHED, Kind.DELETED, Kind.BASE} | DIFFBASE_KINDS
 """Kinds that `check --fix` fixes."""
 
 
@@ -39,6 +47,8 @@ class Finding:
         message: what is wrong, and how to fix it by hand.
         pr: PR number, if the problem is about a PR.
         base: the base the PR should have, for `Kind.BASE`.
+        rev: what a diffbase fix acts on: the PR's bookmark, or for
+            `Kind.ORPHAN_DIFFBASE` the diffbase's change id.
     """
 
     kind: Kind
@@ -46,6 +56,7 @@ class Finding:
     message: str
     pr: int | None = None
     base: str | None = None
+    rev: str | None = None
 
     def __str__(self) -> str:
         return f"{self.subject}: {self.message}"
@@ -76,10 +87,13 @@ def find_problems(snap: Snapshot) -> list[Finding]:
             continue
         subject = f"#{pr.number} {pr.head}"
         base = snap.expected_base(commit)
-        if base.name is None:
-            fix = (
-                f"; add one with `jjh diffbase add {pr.head}`" if commit.is_merge else "")
-            out.append(Finding(Kind.NO_BASE, subject, f"{base.problem}{fix}", pr=pr.number))
+        if base.name is None and commit.is_merge:
+            out.append(Finding(
+                Kind.NO_DIFFBASE, subject,
+                f"{base.problem}; add one with `jjh diffbase add {pr.head}`",
+                pr=pr.number, rev=pr.head))
+        elif base.name is None:
+            out.append(Finding(Kind.NO_BASE, subject, f"{base.problem}", pr=pr.number))
         elif base.name != pr.base:
             out.append(Finding(
                 Kind.BASE, subject,
@@ -113,6 +127,23 @@ def find_problems(snap: Snapshot) -> list[Finding]:
                 f"not a draft, so it can be merged into {pr.base} by accident; "
                 f"`gh pr ready --undo {pr.number}`", pr=pr.number))
 
+    for name in sorted(snap.bookmarks):
+        d = snap.local_commit(name)
+        if not name.startswith(DIFFBASE_PREFIX) or d is None or not d.is_diffbase:
+            continue
+        owner = diffbase_owner(d)
+        above = snap.local_commit(owner)
+        if above is None or d.commit_id not in above.parents:
+            out.append(Finding(
+                Kind.ORPHAN_DIFFBASE, name,
+                f"{owner} is no longer on it; `jj abandon {d.change_id[:8]}`, then "
+                "`jj git push --deleted`", rev=d.change_id))
+        elif sum(p in snap.commits for p in d.parents) <= 1:
+            out.append(Finding(
+                Kind.SPENT_DIFFBASE, name,
+                f"only one parent left, so {owner} doesn't need it; "
+                f"`jjh diffbase rm {owner}`", rev=owner))
+
     for pr in snap.prs:
         base = snap.bookmarks.get(pr.base)
         if pr.state == "MERGED" and pr.base != default and base is not None and base.adopted:
@@ -128,7 +159,8 @@ def check(ctx: Context, *, fix: bool = False, fetch: bool = True) -> list[Findin
 
     Args:
         ctx: repository context.
-        fix: push unpushed bookmarks, retarget PRs, push deletions, then sync.
+        fix: add, remove or abandon diffbases as needed, push unpushed
+            bookmarks, retarget PRs, push deletions, then sync.
         fetch: run `jj git fetch` first.
 
     Returns:
@@ -144,6 +176,20 @@ def check(ctx: Context, *, fix: bool = False, fetch: bool = True) -> list[Findin
         info("No problems found.")
     if not fix:
         return problems
+
+    if any(p.kind in DIFFBASE_KINDS for p in problems):
+        for p in problems:
+            if p.rev is None:
+                continue
+            if p.kind == Kind.NO_DIFFBASE:
+                diffbase_add(ctx, p.rev)
+            elif p.kind == Kind.SPENT_DIFFBASE:
+                diffbase_rm(ctx, p.rev)
+            elif p.kind == Kind.ORPHAN_DIFFBASE:
+                ctx.jj.abandon(p.rev)
+        # Those rewrote commits and moved bookmarks; fix what they left behind.
+        problems = [
+            p for p in find_problems(ctx.snapshot()) if p.kind not in DIFFBASE_KINDS]
 
     if any(p.kind == Kind.UNPUSHED for p in problems):
         ctx.jj.push(tracked=True)
