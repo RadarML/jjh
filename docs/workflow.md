@@ -335,9 +335,33 @@ Merge bottom-up on GitHub, running `jjh land` after each merge. Note that `jjh l
 
 ## Collaborative Coding
 
-A *graph* refers to a set of related commits. **adopt** a graph to work on it and **release** it when you are done.
+A *graph* refers to a set of related commits. To build on someone else's work, check it out without tracking it. Only **adopt** a graph when you intend to co-own it, and **release** it when you are done.
+
+### Building on someone else's PR
+
+```sh
+jj git fetch
+jj new dev/examples@origin    # start a change on top of their PR
+jjh pr dev/examples-cli       # a draft PR based on their branch
+```
+
+- jj treats untracked remote bookmarks as immutable: it refuses to rewrite their commits, and `jj git push --tracked` never pushes their branches. Your rewrites and pushes only move your own PRs.
+- To look at a PR without building on it, use `jj show dev/examples@origin` or `gh pr diff 94`.
+- To change their commits, leave a review comment instead.
+- When they push an update, move your work onto it:
+
+    ```sh
+    jj git fetch
+    jj rebase -s <your bottom commit> -d dev/examples@origin
+    jj git push --tracked
+    jjh check --fix
+    ```
+
+- Once their PR is merged and GitHub deletes its branch, `jjh land` rebases your work onto `main` as usual. If their branch is kept, rebase by hand with `jj rebase -s <your bottom commit> -d main`.
 
 ### Adopting a graph
+
+Adopt a graph when you intend to co-own it: for example, to continue your own work on another machine, or to share a graph with someone who has agreed to it.
 
 ```sh
 jjh adopt 94          # or #94, or a bookmark such as dev/examples
@@ -346,7 +370,8 @@ jj new dev/examples
 
 - `jjh adopt` fetches from GitHub and tracks every branch connected to the PR through commits above `main`: the PRs it builds on, every PR built on those (including other people's), and their `jj-diffbase/` branches.
     - If many PRs share one base PR, adopting any of them adopts them all. Note that only branches on GitHub can be adopted; any unfinished work will need to be given a PR and pushed first.
-- To switch machines, you can adopt the same graph from the other machine. 
+    - Adopted bookmarks rebase with your edits and are pushed by `jj git push --tracked`, so a rewrite anywhere in the graph force-pushes every PR above it, including other people's.
+- To switch machines, you can adopt the same graph from the other machine.
 - If you no longer need a graph, use `jjh release` to stop tracking it.
     - `jjh release` refuses if a bookmark has unpushed changes; pass `--force` to release anyway.
 
@@ -372,3 +397,5 @@ jj rebase -s <bottom of the graph> -d main
 jj git push --tracked
 jjh sync
 ```
+
+If your graph builds on someone else's PR, wait for them to rebase it, then [move your work onto theirs](#building-on-someone-elses-pr).
