@@ -4,7 +4,6 @@ from jjh import description as desc
 from jjh.context import Context
 from jjh.jj import DIFFBASE_PREFIX
 from jjh.run import JJHError, info, warn
-from jjh.stack import BOOKMARK_PREFIXES
 
 from .diffbase import diffbase_add
 from .sync import sync
@@ -12,7 +11,6 @@ from .sync import sync
 
 def open_pr(
     ctx: Context, bookmark: str, *, rev: str = "@", reviewers: tuple[str, ...] = (),
-    any_name: bool = False,
 ) -> int:
     """Bookmark a commit, push it and open its PR.
 
@@ -21,17 +19,12 @@ def open_pr(
         bookmark: name for the bookmark (the PR's head branch).
         rev: the commit to open a PR for.
         reviewers: GitHub users to request reviews from.
-        any_name: allow a bookmark without a known prefix.
 
     Returns:
         The new PR's number (0 in dry-run mode).
     """
     if bookmark.startswith(DIFFBASE_PREFIX):
         raise JJHError(f"{DIFFBASE_PREFIX} is reserved for diffbases")
-    if not any_name and not bookmark.startswith(BOOKMARK_PREFIXES):
-        raise JJHError(
-            f"Bookmark {bookmark!r} should start with one of {', '.join(BOOKMARK_PREFIXES)} "
-            "(pass --any-name to override)")
 
     commit = ctx.jj.commit(rev)
     if commit.on_trunk:

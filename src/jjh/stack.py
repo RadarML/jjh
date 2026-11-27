@@ -13,9 +13,6 @@ from .description import escape
 from .github import PullRequest, RepoInfo
 from .jj import DIFFBASE_PREFIX, Bookmark, Commit, GraphLine, GraphNode
 
-BOOKMARK_PREFIXES = ("dev/", "fix/", "docs/", "ci/")
-"""Allowed bookmark prefixes for new PRs."""
-
 
 def diffbase_name(bookmark: str) -> str:
     """Name of the diffbase bookmark for a PR's bookmark."""
