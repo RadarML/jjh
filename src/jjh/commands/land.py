@@ -74,9 +74,12 @@ def land(ctx: Context) -> LandResult:
         for c, n in landed.items():
             left = ctx.jj.log(f"present({snap.commits[c].change_id}) & mutable()")
             if left:
+                cid = left[0].change_id[:8]
                 warn(
-                    f"#{n}'s commit {left[0].change_id[:8]} is not empty after rebasing onto "
-                    f"{default}; resolve it, then `jj abandon` it")
+                    f"#{n}'s commit {cid} still has changes after rebasing onto {default}, so "
+                    f"what landed differs from your local version. Check it with `jj show {cid}`: "
+                    "keep work that didn't land as a new change, or `jj abandon` it if "
+                    f"{default} already has what you want")
 
     # Remove diffbases that are down to one unlanded parent.
     snap = ctx.snapshot(prs=prs)
