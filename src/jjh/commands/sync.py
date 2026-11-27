@@ -1,12 +1,16 @@
 """`jjh sync`: two-way sync of commit descriptions and PR text."""
 
 from dataclasses import dataclass, field
+from typing import Literal
 
 from jjh import description as desc
 from jjh.context import Context
 from jjh.github import PullRequest
 from jjh.run import info, warn
 from jjh.stack import Snapshot
+
+Take = Literal["commit", "pr"]
+"""Which side wins when a PR changed both locally and on GitHub."""
 
 
 @dataclass
@@ -37,7 +41,8 @@ class _Plan:
 
 
 def _plan(
-    ctx: Context, snap: Snapshot, pr: PullRequest, pull: bool, result: SyncResult,
+    ctx: Context, snap: Snapshot, pr: PullRequest, pull: bool, take: Take | None,
+    result: SyncResult,
 ) -> _Plan | None:
     """Decide what to do with one PR; runs `jj describe` when pulling."""
     commit = snap.local_commit(pr.head)
@@ -53,7 +58,11 @@ def _plan(
 
     commit_hash = desc.text_hash(title, body)
     pr_hash = desc.text_hash(pr.title, text)
-    match desc.decide(commit_hash, pr_hash, stored):
+    action = desc.decide(commit_hash, pr_hash, stored)
+    if action is desc.Action.CONFLICT and take is not None:
+        action = desc.Action.PUSH if take == "commit" else desc.Action.PULL
+        pull = pull or take == "pr"
+    match action:
         case desc.Action.NOTHING:
             return _Plan(pr, synced=commit_hash)
         case desc.Action.PUSH:
@@ -71,13 +80,17 @@ def _plan(
             return None
 
 
-def sync(ctx: Context, *, pull: bool = False, fetch: bool = True) -> SyncResult:
+def sync(
+    ctx: Context, *, pull: bool = False, fetch: bool = True, take: Take | None = None,
+) -> SyncResult:
     """Sync every adopted PR's title and body with its commit, and regenerate graphs.
 
     Args:
         ctx: repository context.
         pull: copy PR text edited on GitHub into the commit descriptions.
         fetch: run `jj git fetch` first.
+        take: for PRs changed on both sides, keep this side's text instead of
+            reporting a conflict.
     """
     if fetch:
         ctx.jj.fetch()
@@ -93,7 +106,7 @@ def sync(ctx: Context, *, pull: bool = False, fetch: bool = True) -> SyncResult:
                 f"#{pr.number} {pr.head} has unpushed changes (`{pr.head}*`); the graph "
                 "shows your local version. Run `jj git push --tracked`.")
 
-    plans = [p for pr in prs if (p := _plan(ctx, snap, pr, pull, result)) is not None]
+    plans = [p for pr in prs if (p := _plan(ctx, snap, pr, pull, take, result)) is not None]
     if result.pulled and not ctx.dry_run:
         # `jj describe` rewrote commits; reload so the graphs use the new ids.
         snap = ctx.snapshot(prs=snap.prs)
@@ -133,7 +146,8 @@ def _report(result: SyncResult) -> None:
     if result.conflicts:
         warn(
             f"Changed both locally and on GitHub since the last sync: {nums(result.conflicts)}. "
-            "Left untouched; make the two sides match (edit either one), then sync again.")
+            "Left untouched; rerun with `--take commit` to keep the commit's text, or "
+            "`--take pr` to keep the PR's.")
     if result.updated:
         info(f"Edited PRs: {nums(result.updated)}")
     else:

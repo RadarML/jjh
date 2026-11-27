@@ -26,7 +26,8 @@ def cli_version() -> None:
 
 
 def cli_sync(
-    pull: bool = False, fetch: bool = True, dry_run: bool = False, remote: str = "origin",
+    pull: bool = False, take: Literal["commit", "pr"] | None = None, fetch: bool = True,
+    dry_run: bool = False, remote: str = "origin",
 ) -> int:
     """Sync PR titles and descriptions with their commits, and regenerate graph sections.
 
@@ -36,7 +37,8 @@ def cli_sync(
 
     - only the commit changed: the PR's title and body are updated;
     - only the PR changed: it is listed, and pulled into the commit with `--pull`;
-    - both changed: nothing is changed on that PR, and it is reported;
+    - both changed: nothing is changed on that PR, and it is reported (unless
+      `--take` picks a side);
     - neither changed: only the graph section is regenerated.
 
     On PRs other people opened, only the graph section changes. `gh pr edit`
@@ -48,13 +50,16 @@ def cli_sync(
         pull: copy PR text edited on GitHub into the commit descriptions. This
             rewrites the commits, so the next push force-pushes them and every
             PR above them.
+        take: for PRs changed both locally and on GitHub since the last sync,
+            keep the commit's text (`commit`) or the PR's (`pr`) instead of
+            reporting a conflict.
         fetch: run `jj git fetch` first.
         dry_run: print the jj and gh commands that would change anything,
             instead of running them.
         remote: git remote that holds the PR branches.
     """
     ctx = Context.create(dry_run=dry_run, remote=remote)
-    return 1 if sync(ctx, pull=pull, fetch=fetch).conflicts else 0
+    return 1 if sync(ctx, pull=pull, fetch=fetch, take=take).conflicts else 0
 
 
 def cli_pr(

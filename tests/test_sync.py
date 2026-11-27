@@ -86,6 +86,32 @@ def test_conflict_leaves_pr_alone(example):
     assert example.gh.prs[90].body == before.body
 
 
+def _conflict(example):
+    ctx = example.ctx()
+    sync(ctx, fetch=False)
+    example.gh.edit(90, title="Edited on GitHub")
+    example.jj("describe", "-r", "fix/empty-input", "-m", "Edited locally")
+    return ctx
+
+
+def test_take_commit_resolves_conflict(example):
+    ctx = _conflict(example)
+    result = sync(ctx, fetch=False, take="commit")
+    assert (result.conflicts, result.pushed) == ([], [90])
+    assert example.gh.prs[90].title == "Edited locally"
+    assert sync(ctx, fetch=False).conflicts == []
+
+
+def test_take_pr_resolves_conflict(example):
+    ctx = _conflict(example)
+    result = sync(ctx, fetch=False, take="pr")
+    assert (result.conflicts, result.pulled) == ([], [90])
+    description = example.jj("log", "--no-graph", "-r", "fix/empty-input", "-T", "description")
+    assert description.startswith("Edited on GitHub\n")
+    assert "jj-graph" not in description
+    assert sync(ctx, fetch=False).conflicts == []
+
+
 def test_other_peoples_prs_only_get_the_graph(example):
     example.gh.add(90, "fix/empty-input", "ci/test-all-prs", title="Their title",
                body="Their text.\n\n<!-- jj-graph -->\nold\n<!-- /jj-graph -->\n\nFooter.",
