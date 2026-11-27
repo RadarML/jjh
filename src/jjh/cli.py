@@ -60,7 +60,7 @@ def cli_sync(
 def cli_pr(
     bookmark: Pos[Annotated[str, tyro.conf.arg(metavar="BOOKMARK")]],
     rev: Annotated[str, tyro.conf.arg(aliases=["-r"])] = "@",
-    reviewer: tuple[str, ...] = (), any_name: bool = False, dry_run: bool = False,
+    reviewer: tuple[str, ...] = (), dry_run: bool = False,
     remote: str = "origin",
 ) -> None:
     """Bookmark a commit, push it and open its PR.
@@ -73,17 +73,15 @@ def cli_pr(
 
     Args:
         bookmark: the bookmark (PR head branch) to create, such as
-            `fix/empty-input`. It must start with `dev/`, `fix/`, `docs/`
-            or `ci/`.
+            `fix/empty-input`.
         rev: the commit to open a PR for.
         reviewer: GitHub users to request reviews from (repeatable).
-        any_name: allow a bookmark name without one of the standard prefixes.
         dry_run: print the jj and gh commands that would change anything,
             instead of running them.
         remote: git remote that holds the PR branches.
     """
     ctx = Context.create(dry_run=dry_run, remote=remote)
-    open_pr(ctx, bookmark, rev=rev, reviewers=reviewer, any_name=any_name)
+    open_pr(ctx, bookmark, rev=rev, reviewers=reviewer)
 
 
 def cli_check(

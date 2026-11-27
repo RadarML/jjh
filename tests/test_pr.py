@@ -33,8 +33,8 @@ def test_pr_stacked_is_draft(repo):
 
 def test_pr_checks_name_and_base(repo):
     repo.commit("main", message="Add a")
-    with pytest.raises(JJHError, match="should start with"):
-        open_pr(repo.ctx(), "a")
+    with pytest.raises(JJHError, match="reserved for diffbases"):
+        open_pr(repo.ctx(), "jj-diffbase/a")
     repo.jj("bookmark", "create", "dev/a", "-r", "@")
     repo.commit("dev/a", message="Add b")
     with pytest.raises(JJHError, match="isn't on GitHub"):
