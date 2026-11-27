@@ -22,6 +22,11 @@ Or run it without installing:
 uvx --from git+ssh://git@github.com/RadarML/jjh.git jjh --help
 ```
 
+To teach coding agents the workflow, install the `jjh` [agent skill](https://radarml.github.io/jjh/#agent-skill):
+```sh
+gh skill install RadarML/jjh jjh --agent claude-code --scope user
+```
+
 > [!NOTE]
 > `jjh` requires Python 3.14 (`uv` will download it automatically if needed), [jj](https://jj-vcs.github.io/jj/latest/install-and-setup/), and an authenticated [`gh`](https://cli.github.com/).
 

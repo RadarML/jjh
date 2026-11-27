@@ -31,6 +31,24 @@ To upgrade:
 uv tool upgrade jjh
 ```
 
+## Agent Skill
+
+`jjh` includes an [agent skill](https://agentskills.io) that teaches coding agents this workflow. Install it with [`gh skill`](https://cli.github.com/manual/gh_skill):
+
+```sh
+gh skill install RadarML/jjh jjh --agent claude-code --scope user
+```
+
+- `--agent` defaults to GitHub Copilot when run non-interactively; see `gh skill install --help` for other agents.
+- `--scope project` installs the skill into the current repository instead, so it can be committed and every contributor's agent gets it.
+- `gh skill update jjh` updates it to the latest release.
+
+Agents only load a skill when they judge that its description matches the task. To make sure they do, add this to the `CLAUDE.md` or `AGENTS.md` of each repository that uses `jjh`:
+
+```md
+This repository uses the jjh workflow (https://radarml.github.io/jjh). Load the `jjh` skill before describing commits, pushing, or opening or updating PRs. Don't use gh-stack here.
+```
+
 ## Commands
 
 For more details, see the [CLI reference](cli.md).
@@ -40,7 +58,7 @@ For more details, see the [CLI reference](cli.md).
 | `jjh pr <bookmark> [-r <rev>]` | Bookmark a commit, push it, and open a PR against the bookmark below it (adding a diffbase if it has two parents) | [GitHub PRs](workflow.md#github-prs) |
 | `jjh sync [--no-pull]` | Sync PR titles and bodies with commit messages in both directions; regenerate each PR's graph | [Descriptions](workflow.md#descriptions) |
 | `jjh check [--fix]` | Report (and fix) wrong bases, unpushed or conflicted bookmarks, and stale PRs | [Push Changes](workflow.md#push-changes) |
-| `jjh adopt <pr>` / `jjh release <pr>` | Start or stop tracking every bookmark in a PR graph | [Collaborative Coding](workflow.md#collaborative-coding) |
+| `jjh adopt <pr>` / `jjh release <pr>` | Start or stop co-owning a PR graph by tracking every bookmark in it | [Collaborative Coding](workflow.md#collaborative-coding) |
 | `jjh land` | After merging on GitHub: rebase the rest onto main, remove diffbases, retarget, and mark ready | [Landing](workflow.md#landing-dependent-prs) |
 | `jjh diffbase add\|rm <bookmark>` | Add or remove a merge commit's diffbase by hand | [Merge Commits](workflow.md#merge-commits) |
 
